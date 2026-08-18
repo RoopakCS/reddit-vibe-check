@@ -23,13 +23,18 @@ function App() {
       const apiUrl = import.meta.env.VITE_API_URL || "";
       const response = await fetch(`${apiUrl}/api/reddit/${encodeURIComponent(subreddit)}`);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch: ${response.statusText}`);
+      let data;
+      try {
+        data = await response.json();
+      } catch (e) {
+        // Fallback if response is not JSON
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data?.error || `Failed to fetch: ${response.statusText}`);
+      }
 
-      if (data.error) throw new Error(data.error);
+      if (data?.error) throw new Error(data.error);
       if (!Array.isArray(data)) throw new Error("Invalid response format");
 
       let totalScore = 0;
