@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Sentiment from "sentiment";
+import "./App.css";
 
 function App() {
   const [subreddit, setSubreddit] = useState("");
@@ -19,7 +20,8 @@ function App() {
     setOverallVibe(null);
 
     try {
-      const response = await fetch(`/api/reddit/${encodeURIComponent(subreddit)}`);
+      const apiUrl = import.meta.env.VITE_API_URL || "";
+      const response = await fetch(`${apiUrl}/api/reddit/${encodeURIComponent(subreddit)}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.statusText}`);
@@ -84,7 +86,7 @@ function App() {
 
       <main>
         <div className="search-container">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A3A3A3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0.75rem 0 0.75rem 1rem' }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A3A3A3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="search-icon">
             <circle cx="11" cy="11" r="8"></circle>
             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
@@ -164,7 +166,7 @@ function App() {
                     </svg>
                     u/{post.author}
                   </div>
-                  <a href={post.permalink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#A3A3A3', textDecoration: 'none', marginLeft: 'auto' }}>
+                  <a href={post.permalink} target="_blank" rel="noopener noreferrer" className="view-link">
                     View 
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
