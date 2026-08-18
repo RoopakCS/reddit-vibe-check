@@ -2,34 +2,24 @@ import { useState } from "react";
 import Sentiment from "sentiment";
 
 function App() {
-  // ── State variables ──────────────────────────────────────────────────────────
-  const [subreddit, setSubreddit] = useState("");     // user's input
-  const [posts, setPosts] = useState([]);              // analyzed posts list
-  const [loading, setLoading] = useState(false);       // loading spinner toggle
-  const [error, setError] = useState("");              // error message
-  const [overallVibe, setOverallVibe] = useState(null); // summary result
+  const [subreddit, setSubreddit] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [overallVibe, setOverallVibe] = useState(null);
 
-  // Create one instance of the sentiment analyzer
   const sentiment = new Sentiment();
 
-  /**
-   * Main function — fetches posts from backend, then runs sentiment
-   * analysis on each post title using the "sentiment" npm library.
-   */
   const handleVibe = async () => {
     if (!subreddit.trim()) return;
 
-    // Reset everything before a new search
     setLoading(true);
     setError("");
     setPosts([]);
     setOverallVibe(null);
 
     try {
-      // Step 1: Fetch posts from our backend API
-      const response = await fetch(
-        `/api/reddit/${encodeURIComponent(subreddit)}`
-      );
+      const response = await fetch(`/api/reddit/${encodeURIComponent(subreddit)}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.statusText}`);
@@ -40,16 +30,12 @@ function App() {
       if (data.error) throw new Error(data.error);
       if (!Array.isArray(data)) throw new Error("Invalid response format");
 
-      // Step 2: Run sentiment analysis on each post title
       let totalScore = 0;
 
       const analyzedPosts = data.map((post) => {
-        // sentiment.analyze() returns an object with a "comparative" score
-        // comparative = score normalized by word count (-1 to +1 range)
         const result = sentiment.analyze(post.title);
         totalScore += result.comparative;
 
-        // Classify the sentiment based on the score
         let sentimentLabel = "neutral";
         if (result.comparative > 0.05) sentimentLabel = "positive";
         else if (result.comparative < -0.05) sentimentLabel = "negative";
@@ -61,10 +47,7 @@ function App() {
         };
       });
 
-      // Step 3: Calculate the overall average vibe score
-      const avgVibe = analyzedPosts.length > 0
-        ? totalScore / analyzedPosts.length
-        : 0;
+      const avgVibe = analyzedPosts.length > 0 ? totalScore / analyzedPosts.length : 0;
 
       let overallLabel = "Neutral";
       let overallClass = "neutral";
@@ -77,14 +60,12 @@ function App() {
         overallClass = "negative";
       }
 
-      // Step 4: Update the UI with results
       setOverallVibe({
         score: avgVibe.toFixed(2),
         label: overallLabel,
         className: overallClass,
       });
       setPosts(analyzedPosts);
-
     } catch (err) {
       console.error(err);
       setError(err.message || "An unexpected error occurred");
@@ -93,27 +74,24 @@ function App() {
     }
   };
 
-  // ── UI ────────────────────────────────────────────────────────────────────────
   return (
     <div className="app-container">
-
-      {/* Header */}
       <header className="header">
         <h1 className="title">
-          <span>🔥</span> The Subreddit Vibe Check
+          Reddit Vibe Check
         </h1>
-        <p className="subtitle">
-          Analyze the sentiment of the top 50 hot posts in any subreddit.
-        </p>
       </header>
 
       <main>
-        {/* Search bar */}
         <div className="search-container">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A3A3A3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0.75rem 0 0.75rem 1rem' }}>
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
           <input
             type="text"
             className="search-input"
-            placeholder="e.g. javascript, reactjs, aww"
+            placeholder="Enter a subreddit (e.g. reactjs)"
             value={subreddit}
             onChange={(e) => setSubreddit(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleVibe()}
@@ -123,34 +101,44 @@ function App() {
             onClick={handleVibe}
             disabled={loading || !subreddit.trim()}
           >
-            {loading ? "Checking..." : "Check Vibe"}
+            {loading ? "Scanning..." : "Analyze"}
           </button>
         </div>
 
-        {/* Error message */}
         {error && <div className="error-message">{error}</div>}
 
-        {/* Loading state */}
         {loading && (
           <div className="loading">
-            Scanning posts and calculating vibes...
+            <div className="bouncing-dots">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+            <span>Analyzing sentiments...</span>
           </div>
         )}
 
-        {/* Overall vibe summary card */}
+        {!loading && !overallVibe && posts.length === 0 && !error && (
+          <div className="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <p>Enter a subreddit above to get started.</p>
+          </div>
+        )}
+
         {!loading && overallVibe && (
           <div className="summary-card">
-            <h2 className="summary-title">Overall Subreddit Vibe</h2>
+            <h2 className="summary-title">Overall Vibe Score</h2>
             <div className={`summary-score ${overallVibe.className}`}>
               {overallVibe.score}
             </div>
             <div className="summary-desc">
-              {overallVibe.label} vibes based on the top {posts.length} posts
+              Classified as <strong>{overallVibe.label}</strong> based on {posts.length} hot posts
             </div>
           </div>
         )}
 
-        {/* Individual post cards */}
         {!loading && posts.length > 0 && (
           <div className="posts-grid">
             {posts.map((post) => (
@@ -169,7 +157,21 @@ function App() {
                   </span>
                 </div>
                 <div className="post-meta">
-                  <div className="meta-item">👤 u/{post.author}</div>
+                  <div className="meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    u/{post.author}
+                  </div>
+                  <a href={post.permalink} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#A3A3A3', textDecoration: 'none', marginLeft: 'auto' }}>
+                    View 
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
                 </div>
               </div>
             ))}

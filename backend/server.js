@@ -87,6 +87,10 @@ app.get("/api/reddit/:subreddit", async (req, res) => {
 	}
 });
 
-app.listen(PORT, () => {
-	console.log(`Backend running at http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+	app.listen(PORT, () => {
+		console.log(`Backend running at http://localhost:${PORT}`);
+	});
+}
+
+export default app;
